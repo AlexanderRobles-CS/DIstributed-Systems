@@ -52,6 +52,12 @@ def get_user_input():
         if waitFunc[0] == "wait":                      # wait function for client
             sleepNum = waitFunc[1]
             sleep(int(sleepNum))
+        
+        if waitFunc[0] == "SUCCESS":
+            print("SUCCESS")
+
+        if waitFunc[0] == "INCORRECT":
+            print("INCORRECT")
 
         else: 
             if waitFunc[0] == "Transfer":                                 #if the user input is a transfer
@@ -100,12 +106,6 @@ def get_user_input():
                 lamportClock += 1                                                                                   #increment the lamport clock
                 mutexRel(originalLamport)                                                                           #call the mutex release function with the original lamport clock value
 
-                print("SUCCESS")                                                                                    #print success for a successful transaction
-
-            if waitFunc[0] == "Balance":                                                #if the user input is a balance
-                out_sock.sendall(bytes(user_input, "utf-8"))                            #send the user input to the server
-                lamportClock += 1                                                       #increment the lamport clock
-
             else:
                 try:
                     out_sock.sendall(bytes(user_input, "utf-8"))                   # send user input string to server, converted into bytes
@@ -133,7 +133,9 @@ def respond(data):                            # handle a new connection by waiti
     data = data.split(" ")
 
     incomingID = int(data[0])
-    print("Incoming ID: " + str(incomingID), flush=True)
+    # print("Incoming ID: " + str(incomingID), flush=True)
+
+    print("Incoming MESSAGE: " + str(data[1]), flush=True)
 
     msg = data[1]
     incomingLamport = int(data[2])
@@ -160,6 +162,9 @@ def respond(data):                            # handle a new connection by waiti
         lamportClock = 1 + max(lamportClock, incomingLamport)
         print("Client P" + str(incomingID) + " released <" + str(incomingLamport) + "," + str(clientNum) + ">", flush=True)
         mutexQueue.pop(0)
+
+    if msg == "SUCCESS":
+        print("SUCCESS", flush=True)
     
 
 def listenForClients(conn, addr):

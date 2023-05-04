@@ -66,12 +66,14 @@ def handle_msg(data,conn):                      # simulates network delay then h
                 transferAmount = userRequest[2].replace("$", "")
                 
                 if int(transferAmount) > blockchain.getBalance(PIDS[conn]):     # determine if there is sufficient balance
-                    conn.sendall(bytes(f"Insufficient Balance", "utf-8"))       # let user know if there are sufficient funds
+                   # print("sending incorrect")
+                    conn.sendall(bytes(f"INCORRECT", "utf-8"))       # let user know if there are sufficient funds
 
                 else:                                                        # append block with transaction information to blockchain
                     block = Block(str(PIDS[conn]), str(transferTarget), str(transferAmount), str(blockchain.getLatestBlock().hash), userRequest[3])
                     blockchain.appendBlock(block, str(PIDS[conn]), transferTarget, transferAmount)
-                    conn.sendall(bytes(f"Success", "utf-8"))
+                   # print("sending success")
+                    conn.sendall(bytes(f"SUCCESS", "utf-8"))
 
         if userRequest[0] == "Balance":                                         # get the user balance of a given user
             balance = blockchain.getBalance(userRequest[1])
