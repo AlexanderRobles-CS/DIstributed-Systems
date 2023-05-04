@@ -11,7 +11,7 @@ def lamportSort(pair):
 
 def mutexRequest(originalLamport):
     sleep(3)
-    print("Requesting <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
+    print("REQUEST <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
     #lamportClock += 1
     for client in outboundSOCKETS.values():
         client.sendall(bytes(str(clientNum) + " request " + str(originalLamport), "utf-8"))
@@ -21,11 +21,13 @@ def mutexRequest(originalLamport):
 def mutexRelease(originalLamport):
     sleep(3)
     #lamportClock += 1
-    print("Releasing <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
+    print("RELEASE <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
     for client in outboundSOCKETS.values():
         client.sendall(bytes(str(clientNum) + " release " + str(lamportClock) + " " + str(originalLamport), "utf-8"))
        #  print("Release sent to client " + str(client), flush=True)
+        print("DONE <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
         sleep(1)
+    
 
 # keep waiting and asking for user inputs
 def get_user_input():
@@ -52,7 +54,7 @@ def get_user_input():
 
                 originalLamport = lamportClock
 
-                print("Request <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
+                print("REQUEST <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
 
                 queue.append((lamportClock, int(clientNum)))
                 queue.sort(key=lamportSort)
@@ -63,7 +65,7 @@ def get_user_input():
                     timeoutCount += 1
                     sleep(1)
                     if timeoutCount == 9:
-                        print("Timeout.")
+                        print("INCORRECT")
                         break
                     continue
                 
@@ -83,6 +85,8 @@ def get_user_input():
 
                 lamportClock += 1
                 mutexRelease(originalLamport)
+
+                print("SUCCESS")
 
             if waitFunc[0] == "Balance":
                 out_sock.sendall(bytes(user_input, "utf-8"))
@@ -138,7 +142,7 @@ def respond(data):                            # handle a new connection by waiti
     if msg == "reply":
         incomingLamport = int(data[3])
         lamportClock = 1 + max(lamportClock, incomingLamport)
-        print ("Client P" + str(incomingID) + " replied <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
+        print ("Client P" + str(incomingID) + " REPLIED <" + str(lamportClock) + ", " + str(clientNum) + ">", flush=True)
         ReplyArr[incomingID - 1] = 1
         
     if msg == "release":

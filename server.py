@@ -28,6 +28,7 @@ def get_userInput():
         elif userInput == "Blockchain":             # iterate through blockchain to append to history array
             history = []
             for block in blockchain.chain:
+                print("Nonce: " + str(block.nonce))
                 history.append("(" + str(block.sender) + ", " + str(block.receiver) + ", $" + str(block.amount) + ", " + 
                                str(block.nonce) + ", " + str(block.lamportClock) + ", " + str(block.prevHash) + ")") 
 

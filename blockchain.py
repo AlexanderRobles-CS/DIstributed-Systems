@@ -62,7 +62,7 @@ class Blockchain:
         self.chain.append(newBlock)
     
     # calculate balance of a given user
-    # iteratet through the blockchain 
+    # iterate through the blockchain 
     # add or subtract based upon if a user is the sender or the receiver
     def getBalance(self, sender):
         balance = 10
