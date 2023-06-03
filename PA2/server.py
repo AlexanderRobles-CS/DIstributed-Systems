@@ -28,7 +28,6 @@ def get_userInput():
         elif userInput == "Blockchain":             # iterate through blockchain to append to history array
             history = []
             for block in blockchain.chain:
-                print("Nonce: " + str(block.nonce))
                 history.append("(" + str(block.sender) + ", " + str(block.receiver) + ", $" + str(block.amount) + ", " + 
                                str(block.nonce) + ", " + str(block.lamportClock) + ", " + str(block.prevHash) + ")") 
 
@@ -66,13 +65,13 @@ def handle_msg(data,conn):                      # simulates network delay then h
                 transferAmount = userRequest[2].replace("$", "")
                 
                 if int(transferAmount) > blockchain.getBalance(PIDS[conn]):     # determine if there is sufficient balance
-                   # print("sending incorrect")
+                    print("INCORRECT")
                     conn.sendall(bytes(f"INCORRECT", "utf-8"))       # let user know if there are sufficient funds
 
                 else:                                                        # append block with transaction information to blockchain
                     block = Block(str(PIDS[conn]), str(transferTarget), str(transferAmount), str(blockchain.getLatestBlock().hash), userRequest[3])
                     blockchain.appendBlock(block, str(PIDS[conn]), transferTarget, transferAmount)
-                   # print("sending success")
+                    print("SUCCESS")
                     conn.sendall(bytes(f"SUCCESS", "utf-8"))
 
         if userRequest[0] == "Balance":                                         # get the user balance of a given user

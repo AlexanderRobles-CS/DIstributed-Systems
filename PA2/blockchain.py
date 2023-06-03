@@ -54,7 +54,6 @@ class Blockchain:
         newBlock.amount = amount                            # set amount for new block
         newBlock.prevHash = self.getLatestBlock().hash      # set previous hash of new block to hash of latest block
         newBlock.calcNonce()                                # calculate nonce for new block
-        newBlock.nonce = newBlock.nonce                     # calculate nonce for new block
         newBlock.lamportClock = newBlock.lamportClock       # set lamport clock for new block
         
         self.chain.append(newBlock)                         # append new block to blockchain
