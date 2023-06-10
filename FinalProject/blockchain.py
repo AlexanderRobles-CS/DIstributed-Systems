@@ -3,12 +3,12 @@ import hashlib
 
 # init block
 class Block:
-    def __init__(self, sender, receiver, amount, prevHash, lamportClock):
-        self.lamportClock = lamportClock    # lamport clock
+    def __init__(self, prevHash, operation, user, title, contents):
         self.prevHash = prevHash            # hash of previous block
-        self.sender = sender                # sender of transaction
-        self.receiver = receiver            # receiver of transaction
-        self.amount = amount                # amount of transaction
+        self.user = user                    # user of block
+        self.title = title                  # title of block
+        self.contents = contents            # contents of block
+        self.operation = operation          # operation of block
         self.nonce = 0                      # nonce value
         self.hash = self.calcHash()         # hash of current block
     
@@ -17,17 +17,17 @@ class Block:
         sha256 = hashlib.sha256()                           # sha256 hash function
 
         sha256.update(str(self.prevHash).encode('utf-8') +
-                   str(self.sender).encode('utf-8') +
-                   str(self.receiver).encode('utf-8') +
-                   "$".encode('utf-8') +
-                   str(self.amount).encode('utf-8') +
-                   str(self.nonce).encode('utf-8'))         # hash of previous block, sender, receiver, amount, and nonce all concatenated together
+                   str(self.operation).encode('utf-8') +
+                   str(self.user).encode('utf-8') +
+                   str(self.title).encode('utf-8') +
+                   str(self.contents).encode('utf-8') +
+                   str(self.nonce).encode('utf-8'))         # hash of previous block, operation, user, title, contents, and nonce
         return sha256.hexdigest()                           # return hash in hexidecimal
 
     # mining nonce function
     def calcNonce(self):
 
-        while int(self.hash[0], 16) >= 4:   # look for 2 leading 0s in hex, if not found, increment nonce and recalculate hash
+        while int(self.hash[0], 16) >= 2:   # look for 2 leading 0s
             self.nonce += 1                 # increment nonce
             self.hash = self.calcHash()     # recalculate hash
 
@@ -40,7 +40,7 @@ class Blockchain:
     # create genesis block
     def createGenesis(self):                            
         genisisBlockHash = "0" * 64                     # hash of genesis block is 64 0s
-        return Block("Genesis Block", "Genesis Block", 0, genisisBlockHash, "<0,0>")    # return genesis block for blockchain
+        return Block(genisisBlockHash, "genesisOp", "genesisUser", "genesisTitle", "genesisContent")    # return genesis block for blockchain
 
     def getLatestBlock(self): 
     # get latest block on blockchain
@@ -48,22 +48,45 @@ class Blockchain:
         return self.chain[-1]
 
     # append new block to blockchain
-    def appendBlock(self, newBlock, sender, receiver, amount):
-        newBlock.sender = sender                            # set sender for new block
-        newBlock.receiver = receiver                        # set receiver for new block
-        newBlock.amount = amount                            # set amount for new block
+    def appendBlock(self, newBlock, user, operation, title, contents):
+        newBlock.user = user                                # set user for new block
+        newBlock.operation = operation                      # set operation for new block
+        newBlock.title = title                              # set title for new block
+        newBlock.contents = contents                        # set contents for new block
         newBlock.prevHash = self.getLatestBlock().hash      # set previous hash of new block to hash of latest block
         newBlock.calcNonce()                                # calculate nonce for new block
-        newBlock.lamportClock = newBlock.lamportClock       # set lamport clock for new block
         
         self.chain.append(newBlock)                         # append new block to blockchain
+
+    def isValidPost(self, title):
+        for block in self.chain:                                          # iterate through blockchain
+            if block.title == title and block.operation == "post":        # if block title is title
+                return True                                              # return false
+        return False                                                       # return true
     
-    # calculate balance of a given user
-    def getBalance(self, sender):
-        balance = 10                                     # set initial balance to 10
-        for block in self.chain:                         # iterate through blockchain
-            if block.sender == sender:                   # if sender is the sender of the transaction
-                balance = balance - int(block.amount)    # subtract amount from balance
-            elif block.receiver == sender:               # if sender is the receiver of the transaction
-                balance =  balance + int(block.amount)   # add amount to balance
-        return balance
+    def getBlogChain(self):
+        blog = []                                                                     # init list of posts
+        for block in self.chain:                                                      # iterate through blockchain
+            blog.append((block.operation, block.user, block.title, block.contents))   # append block to list of posts
+        return blog
+    
+    def getUserPosts(self, user):
+        userPosts = []                                                            # init list of posts from user
+        for block in self.chain:                                                  # iterate through blockchain
+            if block.user == user:                                                # if block user is user
+                userPosts.append((block.title, block.contents))                   # append block to list of posts from user
+        return userPosts                                                          # return list of posts from user
+    
+    def getPostComments(self, title):
+        postComments = []                                                         # init list of comments on post
+        for block in self.chain:                                                  # iterate through blockchain
+            if block.operation == "post" and block.title == title:                # if block title is title and block operation is comment
+                postComments.append((block.title, block.user, block.contents))    # append block to list of comments on post
+
+        for block in self.chain:                                                  # iterate through blockchain
+            if  block.op == "comment" and block.title == title:                   # if block title is title and block operation is comment
+                postComments.append((block.user, block.contents))              # append block to list of comments on post
+        return postComments                                                       # return list of comments on post
+    
+    def returnBlockLength(self):
+        return len(self.chain)                                                    # return length of blockchain
