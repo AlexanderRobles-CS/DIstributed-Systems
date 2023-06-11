@@ -72,13 +72,15 @@ def get_userInput():
     while True:
         userInput = input()                     # wait for user input
 
-        failLink = check_command_letter_number(userInput, "failLink")
-        fixLink = check_command_letter_number(userInput, "fixLink")
+        
+        
         view = extract_command_and_string(userInput, "view")
         read = extract_command_and_string(userInput, "read")
         wait = extract_command_and_string(userInput, "wait")
-        comment = extract_fields_from_command(userInput, "comment")
         post = extract_fields_from_command(userInput, "post")
+        fixLink = check_command_letter_number(userInput, "fixLink")
+        comment = extract_fields_from_command(userInput, "comment")
+        failLink = check_command_letter_number(userInput, "failLink")
 
         if  userInput == "crash":                       # crash the program
             inBoundSocket.close()                       # close all sockets before exiting
