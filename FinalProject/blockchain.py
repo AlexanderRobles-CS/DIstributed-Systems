@@ -27,7 +27,7 @@ class Block:
     # mining nonce function
     def calcNonce(self):
 
-        while int(self.hash[0], 16) >= 2:   # look for 2 leading 0s
+        while int(self.hash[0], 16) >= 3:   # look for 3 leading 0s
             self.nonce += 1                 # increment nonce
             self.hash = self.calcHash()     # recalculate hash
 
@@ -48,14 +48,8 @@ class Blockchain:
         return self.chain[-1]
 
     # append new block to blockchain
-    def appendBlock(self, newBlock, user, operation, title, contents):
-        newBlock.user = user                                # set user for new block
-        newBlock.operation = operation                      # set operation for new block
-        newBlock.title = title                              # set title for new block
-        newBlock.contents = contents                        # set contents for new block
-        newBlock.prevHash = self.getLatestBlock().hash      # set previous hash of new block to hash of latest block
+    def appendBlock(self, newBlock):
         newBlock.calcNonce()                                # calculate nonce for new block
-        
         self.chain.append(newBlock)                         # append new block to blockchain
 
     def isValidPost(self, title):

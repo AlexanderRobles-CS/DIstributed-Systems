@@ -132,8 +132,7 @@ def get_userInput():
                 queue.append(userInput)
 
                 blockToAdd = Block(blockchain.getLatestBlock().hash, command, username, title, content)
-                blockToAdd.calcNonce()
-                blockchain.appendBlock(blockToAdd, username, command, title, content)
+                blockchain.appendBlock(blockToAdd)
 
                 for node in outBoundSockets.values():
                     print("Sending Accept Message...", flush=True)                                                                                                                    # print message to console
@@ -163,8 +162,7 @@ def get_userInput():
                 queue.append(userInput)
 
                 blockToAdd = Block(blockchain.getLatestBlock().hash, command, username, title, content)
-                blockToAdd.calcNonce()
-                blockchain.appendBlock(blockToAdd, username, command, title, content)
+                blockchain.appendBlock(blockToAdd)
 
                 for node in outBoundSockets.values():
                     print("Sending Accept Message...", flush=True)                                                                                                                    # print message to console
@@ -194,8 +192,8 @@ def get_userInput():
                         count = count + 1
                         continue
 
-                    if block.operation == "post":                 # if block operation is post
-                        titleOfPosts.append(block.title)          # append block title to list of titles
+                    if block.operation == "post" or block.operation == "comment":                 # if block operation is post or a comment
+                        titleOfPosts.append(block.title)                                          # append block title to list of titles
     
                 for title in titleOfPosts:                        # iterate through list of titles
                     print(str(title), flush=True)                 # print title to console
@@ -236,17 +234,18 @@ def get_userInput():
                 row = row[:-1]                                             # ignore endlines
                 splicedRow = row.split(" ")                                # split row by spaces
                 operation, username, title, contents = extract_fields(row)
-                                                  
-                blockToAdd = Block(blockchain.getLatestBlock().hash, splicedRow[1], username, title, contents)  # create block
-                blockToAdd.calcNonce()                                                                                            # calculate block nonce
-                blockchain.appendBlock(blockToAdd, username, splicedRow[1], title, contents)                    # add block
+
+                blockToAdd = Block(blockchain.getLatestBlock().hash, str(splicedRow[1]),  str(splicedRow[2]), title, contents)  # create block                                                                                     # calculate block nonce
+                blockchain.appendBlock(blockToAdd)                                                              # add block\
+                blockchainHistory = blockchain.getBlogChain()
+                print(blockchainHistory)
 
             content = open(blogFile, 'r').readlines()
             for row in content:                                            # iterate through file
                 row = row[:-1]                                             # ignore endlines
-                splicedRow = row.split(" ")                                # split row by spaces
                 operation, username, title, contents = extract_fields(row)
-                blogApp.add_post(str(splicedRow[1]), str(username), str(title), str(content))            # add post to blog
+                splicedRow = row.split(" ")                                # split row by spaces
+                blogApp.add_post(splicedRow[0], splicedRow[1], str(title), str(contents))            # add post to blog
 
         if userInput == "exit":
             inBoundSocket.close()                          # close all sockets before exiting
@@ -312,11 +311,11 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                     logOperation = blockchainLength+"(" + operation +", " + user + ", " + title + ")"
                     queue.append(logOperation)
 
-                    new_block = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
-                    new_block.calcNonce()
+                    blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
+                    blockToAdd.calcNonce()
 
                     for node in outBoundSockets.values():
-                        formatString = str(new_block.operation) + "(" + str(new_block.user) + ", " + str(new_block.title) + ", " + str(new_block.contents) + ")"
+                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
                         node.sendall(f"ACCEPT {nodeID} {str(blockchain.returnBlockLength())} {formatString}".encode())
 
             if command == "ACCEPT" and int(blockchainLength) >= blockchain.returnBlockLength():
@@ -337,16 +336,16 @@ def handle_msg(data, conn, addr):                      # simulates network delay
 
                 if acceptCount >= math.ceil((len(outBoundSockets) + 1)/2):
                     acceptCount = 0
-                    new_block = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
-                    blockchain.appendBlock(new_block, user, operation, title, contents)
+                    blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
+                    blockchain.appendBlock(blockToAdd)
 
                     with open(nodeBlockChainLogFileName, "a") as log:
-                        log.write(f"CONFIRMED: {new_block.operation} {new_block.user} title: {new_block.title} contents: {new_block.contents}\n")
+                        log.write(f"CONFIRMED: {blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n")
 
                     blogApp.add_post(operation, user, title, contents)
 
                     with open(blogFile, "a") as log:
-                        log.write(f"{new_block.operation} {new_block.user} title: {new_block.title} contents: {new_block.contents}\n")
+                        log.write(f"{blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n")
 
                     queue.pop(0)
 
@@ -357,21 +356,21 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                         print(f"NEW COMMENT: <{title}> from <{user}>")
 
                     for node in outBoundSockets.values():
-                        formatString = str(new_block.operation) + "(" + str(new_block.user) + ", " + str(new_block.title) + ", " + str(new_block.contents) + ")"
+                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
                         node.sendall(f"DECIDE {nodeID} {str(blockchain.returnBlockLength())} {formatString}".encode())
 
             if command == "DECIDE":
                 print(f"Received DECIDE from node: {node_ID}...")
-                new_block = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
-                blockchain.appendBlock(new_block, user, operation, title, contents)
+                blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
+                blockchain.appendBlock(blockToAdd)
                 content = open(nodeBlockChainLogFileName, 'r').readlines()
-                content[-1] = f"CONFIRMED: {new_block.operation} {new_block.user} title: {new_block.title} contents: {new_block.contents}\n"
+                content[-1] = f"CONFIRMED: {blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n"
                 out = open(nodeBlockChainLogFileName, 'w')
                 out.writelines(content)
                 out.close()
                 blogApp.add_post(operation, user, title, contents)
                 with open(blogFile, "a") as log:
-                        log.write(f"{new_block.operation} {new_block.user} title: {new_block.title} contents: {new_block.contents}\n")
+                        log.write(f"{blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n")
 
                 if operation == "post":
                     print(f"NEW POST: {title} from {user}.")
@@ -384,10 +383,10 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                 if leadID == nodeID:
                     logOperation = operation + " " + user + " " + title + " " + contents
                     queue.append(logOperation)
-                    new_block = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
-                    new_block.calcNonce()
+                    blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
+                    blockToAdd.calcNonce()
                     for node in outBoundSockets.values():
-                        formatString = str(new_block.operation) + "(" + str(new_block.user) + ", " + str(new_block.title) + ", " + str(new_block.contents) + ")"
+                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
                         node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {formatString}".encode())
                 else:
                     outBoundSockets[leadID].sendall(f"FORWARD {nodeID} {str(blockchain.returnBlockLength())} {logOperation}".encode())
@@ -482,83 +481,51 @@ if __name__ == "__main__":
     inBoundSocket.listen()                                                        # start listening for connections to the address
     threading.Thread(target=getConns).start()                                     # start thread to listen for new connections
 
-    sleep(8)
-    
-    # outBoundSocket1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # outBoundSocket2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # outBoundSocket3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # out_sock4 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sleep(8)                                                                      # time to initiate connections between every node
     
     if int(nodeID) == 1:
         addConns(2)
         addConns(3)
-        # outBoundSocket1.connect((IP, 9002))
-        # outBoundSocket2.connect((IP, 9003))
-        # outBoundSockets[2] = outBoundSocket1
-        # outBoundSockets[3] = outBoundSocket2
  
     if int(nodeID) == 2:
         addConns(1)
         addConns(3)
-        # outBoundSocket1.connect((IP, 9001))
-        # outBoundSocket2.connect((IP, 9003))
-        # outBoundSockets[1] = outBoundSocket1
-        # outBoundSockets[3] = outBoundSocket2
 
     if int(nodeID) == 3:
         addConns(1)
         addConns(2)
-        # outBoundSocket1.connect((IP, 9001))
-        # outBoundSocket2.connect((IP, 9002))
-        # outBoundSockets[1] = outBoundSocket1
-        # outBoundSockets[2] = outBoundSocket2
 
 
     # if nodeID == 1:       CHANGE to all 5 servers
-    #     out_sock1.connect((IP, 9002))
-    #     out_sock2.connect((IP, 9003))
-    #     out_sock3.connect((IP, 9004))
-    #     out_sock4.connect((IP, 9005))
-    #     out_socks[2] = out_sock1
-    #     out_socks[3] = out_sock2
-    #     out_socks[4] = out_sock3
-    #     out_socks[5] = out_sock4
+        # addConns(2)
+        # addConns(3)
+        # addConns(4)
+        # addConns(5)
+
     # if nodeID == 2:
-    #     out_sock1.connect((IP, 9001))
-    #     out_sock2.connect((IP, 9003))
-    #     out_sock3.connect((IP, 9004))
-    #     out_sock4.connect((IP, 9005))
-    #     out_socks[1] = out_sock1
-    #     out_socks[3] = out_sock2
-    #     out_socks[4] = out_sock3
-    #     out_socks[5] = out_sock4
+        # addConns(1)
+        # addConns(3)
+        # addConns(4)
+        # addConns(5)
+
     # if idNum == 3:
-    #     out_sock1.connect((IP, 9001))
-    #     out_sock2.connect((IP, 9002))
-    #     out_sock3.connect((IP, 9004))
-    #     out_sock4.connect((IP, 9005))
-    #     out_socks[1] = out_sock1
-    #     out_socks[2] = out_sock2
-    #     out_socks[4] = out_sock3
-    #     out_socks[5] = out_sock4
+        # addConns(1)
+        # addConns(2)
+        # addConns(4)
+        # addConns(5)
+
+    
     # if nodeID == 4:
-    #     out_sock1.connect((IP, 9001))
-    #     out_sock2.connect((IP, 9002))
-    #     out_sock3.connect((IP, 9003))
-    #     out_sock4.connect((IP, 9005))
-    #     out_socks[1] = out_sock1
-    #     out_socks[2] = out_sock2
-    #     out_socks[3] = out_sock3
-    #     out_socks[5] = out_sock4
+        # addConns(1)
+        # addConns(2)
+        # addConns(3)
+        # addConns(5)
+    
     # if nodeID == 5:
-    #     out_sock1.connect((IP, 9001))
-    #     out_sock2.connect((IP, 9002))
-    #     out_sock3.connect((IP, 9003))
-    #     out_sock4.connect((IP, 9004))
-    #     out_socks[1] = out_sock1
-    #     out_socks[2] = out_sock2
-    #     out_socks[3] = out_sock3
-    #     out_socks[4] = out_sock4
+        # addConns(1)
+        # addConns(2)
+        # addConns(3)
+        # addConns(4)
 
     threading.Thread(target=get_userInput).start() 
     
