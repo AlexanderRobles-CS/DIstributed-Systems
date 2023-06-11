@@ -72,8 +72,6 @@ def get_userInput():
     while True:
         userInput = input()                     # wait for user input
 
-        
-        
         view = extract_command_and_string(userInput, "view")
         read = extract_command_and_string(userInput, "read")
         wait = extract_command_and_string(userInput, "wait")
@@ -132,6 +130,7 @@ def get_userInput():
 
             if leadID != nodeID:
                 print("NOT LEADER", flush=True)
+                leaderSet = False
                 leadID = None
 
             if command == "post" and blockchain.isValidPost(title) == True:
@@ -273,6 +272,12 @@ def get_userInput():
             print("waiting " + str(time) + " seconds")
             sleep(int(time))
 
+        if userInput == "leader":
+            print(str(leadID) + "   " + str(type(leadID)))
+
+        if userInput == "nodes":
+            print(outBoundSockets.keys())
+
 def handle_msg(data, conn, addr):                      # simulates network delay then handles received message
     global leadID
     global acceptCount
@@ -307,13 +312,13 @@ def handle_msg(data, conn, addr):                      # simulates network delay
             contents = match.group(7)
 
             if command == "PREPARE" and int(blockchainLength) >= blockchain.returnBlockLength():
-                    print(f"Received PREPARE from node: {node_ID}...")
+                    print(f"Received PREPARE from node {node_ID}...")
 
                     logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
                     outBoundSockets[int(node_ID)].sendall(f"PROMISE {nodeID} {str(blockchain.returnBlockLength())} {logOperation}".encode())
             
             if command == "PROMISE":
-                print(f"Received PROMISE from node: {node_ID}...")
+                print(f"Received PROMISE from node {node_ID}...")
                 promiseCount += 1
                 if promiseCount >= math.ceil((len(outBoundSockets) + 1)/2):
                     promiseCount = 0
@@ -330,7 +335,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                         node.sendall(f"ACCEPT {nodeID} {str(blockchain.returnBlockLength())} {formatString}".encode())
 
             if command == "ACCEPT" and int(blockchainLength) >= blockchain.returnBlockLength():
-                print(f"Received ACCEPT from node: {node_ID}...")
+                print(f"Received ACCEPT from node {node_ID}...")
                 
                 leadID = int(node_ID)
                 logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
@@ -342,7 +347,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
 
             if command == "ACCEPTED":
                 sleep(0.5)
-                print(f"Received ACCEPTED from node: {node_ID}...")
+                print(f"Received ACCEPTED from node {node_ID}...")
                 acceptCount = acceptCount + 1
 
                 if acceptCount >= math.ceil((len(outBoundSockets) + 1)/2):
@@ -371,7 +376,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                         node.sendall(f"DECIDE {nodeID} {str(blockchain.returnBlockLength())} {formatString}".encode())
 
             if command == "DECIDE":
-                print(f"Received DECIDE from node: {node_ID}...")
+                print(f"Received DECIDE from node {node_ID}...")
                 blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
                 blockchain.appendBlock(blockToAdd)
                 content = open(nodeBlockChainLogFileName, 'r').readlines()
