@@ -1,8 +1,9 @@
 class Blog:
-    def __init__(self):
-        self.storage = {}
+    def __init__(self):                         # container for blog posts
+        self.blogBin = {}
 
-    def add_post(self, op, username, title, content):
-        if username not in self.storage:
-            self.storage[username] = []
-        self.storage[username].append((op, title, content))
+    def commitPost(self, operation, user, title, contents):        # add post to blog
+        if user not in self.blogBin: 
+            self.blogBin[user] = []
+
+        self.blogBin[user].append((operation, title, contents))

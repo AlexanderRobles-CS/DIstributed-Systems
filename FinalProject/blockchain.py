@@ -47,8 +47,7 @@ class Blockchain:
     # used for getting previous block data memebers
         return self.chain[-1]
 
-    # append new block to blockchain
-    def appendBlock(self, newBlock):
+    def appendBlock(self, newBlock):                        # append new block to blockchain
         newBlock.calcNonce()                                # calculate nonce for new block
         self.chain.append(newBlock)                         # append new block to blockchain
 

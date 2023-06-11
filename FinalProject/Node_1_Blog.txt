@@ -1,2 +1,0 @@
-post alex title: title contents: test contents
-comment mihir title: title contents: this is cool

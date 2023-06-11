@@ -126,10 +126,19 @@ def get_userInput():
             title = post[2]
             content = post[3]
 
+            print("msg: " + str(command)+ ", " + str(username) + ", " + str(title) + ", " + str(content), flush=True) # print message to console
+            print("leadID: " + str(leadID), flush=True)                                                                 # print message to console
+            print("nodeID: " + str(nodeID), flush=True)                                                                 # print message to console
+
+            if leadID != nodeID:
+                print("NOT LEADER", flush=True)
+                leadID = None
+
             if command == "post" and blockchain.isValidPost(title) == True:
                 print("DUPLICATE TITLE", flush=True)
            
             elif leadID == nodeID:                                # pseudo leader
+                print("Inserting post into queue...", flush=True) # print message to console
                 
                 queue.append(userInput)
 
@@ -142,7 +151,7 @@ def get_userInput():
                     node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {formatString}".encode())      # send accept message to other nodes
 
             elif leadID == None:                                    # pseudo proposer
-                
+                print("Inserting post into queue...", flush=True) # print message to console
                 for node in outBoundSockets.values():                                                          # iterate through outbound sockets
                     print("Sending Prepare Message...", flush=True)                                            # print message to console
                     node.sendall(f"PREPARE {nodeID} {blockchain.returnBlockLength()} {userInput}".encode())    # send prepare message to other nodes
@@ -247,7 +256,7 @@ def get_userInput():
                 row = row[:-1]                                             # ignore endlines
                 operation, username, title, contents = extract_fields(row)
                 splicedRow = row.split(" ")                                # split row by spaces
-                blogApp.add_post(splicedRow[0], splicedRow[1], str(title), str(contents))            # add post to blog
+                blogApp.commitPost(splicedRow[0], splicedRow[1], str(title), str(contents))            # add post to blog
 
         if userInput == "exit":
             inBoundSocket.close()                          # close all sockets before exiting
@@ -322,7 +331,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
 
             if command == "ACCEPT" and int(blockchainLength) >= blockchain.returnBlockLength():
                 print(f"Received ACCEPT from node: {node_ID}...")
-
+                
                 leadID = int(node_ID)
                 logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
 
@@ -344,7 +353,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                     with open(nodeBlockChainLogFileName, "a") as log:
                         log.write(f"CONFIRMED: {blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n")
 
-                    blogApp.add_post(operation, user, title, contents)
+                    blogApp.commitPost(operation, user, title, contents)
 
                     with open(blogFile, "a") as log:
                         log.write(f"{blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n")
@@ -370,7 +379,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                 out = open(nodeBlockChainLogFileName, 'w')
                 out.writelines(content)
                 out.close()
-                blogApp.add_post(operation, user, title, contents)
+                blogApp.commitPost(operation, user, title, contents)
                 with open(blogFile, "a") as log:
                         log.write(f"{blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n")
 
