@@ -14,24 +14,24 @@ from blockchain import Blockchain, Block
 
 # function that uses regex for command used for fixing and failing links
 def check_command_letter_number(string, desired_command):
-    pattern = r'({0})\(([A-Za-z])(\d+)\)'.format(desired_command)
-    match = re.search(pattern, string)
-    if match:
-        command = match.group(1)
-        letter = match.group(2)
-        number = match.group(3)
-        return command, letter, number
-    return None
+    pattern = r'({0})\(([A-Za-z])(\d+)\)'.format(desired_command)       # regex pattern for command
+    match = re.search(pattern, string)                                  # search for pattern in string
+    if match:                                                # if match is found
+        command = match.group(1)                            # get command
+        letter = match.group(2)                             # get letter
+        number = match.group(3)                             # get number
+        return command, letter, number                      # return command, letter, and number
+    return None                                 # if no match is found return None
 
 # function that uses regex for command used for extracting command and string
 def extract_command_and_string(string, desired_command):
-    pattern = r"({0})\((.*?)\)".format(desired_command)
-    match = re.search(pattern, string)
-    if match:
-        command = match.group(1)
-        extracted_string = match.group(2)
-        return command, extracted_string
-    return None
+    pattern = r"({0})\((.*?)\)".format(desired_command)     # regex pattern for command
+    match = re.search(pattern, string)                      # search for pattern in string
+    if match:                                               # if match is found
+        command = match.group(1)                            # get command
+        extracted_string = match.group(2)                   # get string
+        return command, extracted_string                    # return command and string
+    return None                                 # if no match is found return None
 
 # function used for post and comment commands
 def extract_fields_from_command(string, desired_command):
