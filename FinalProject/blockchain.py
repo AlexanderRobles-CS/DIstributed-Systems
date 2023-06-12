@@ -28,7 +28,7 @@ class Block:
     def calcNonce(self):
 
         while int(self.hash[0], 16) >= 3:   # look for 3 leading 0s
-            self.nonce += 1                 # increment nonce
+            self.nonce += 1                 # idncrement nonce
             self.hash = self.calcHash()     # recalculate hash
 
 # init blockchain
