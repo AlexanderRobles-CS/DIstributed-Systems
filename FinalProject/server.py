@@ -272,7 +272,7 @@ def get_userInput():
 
         if userInput == "reconnect":                                # reconnect to all nodes
             for sock in outBoundSockets.values():                   # send reconnect message to all nodes
-                sock.sendall(f"RECONNECT {nodeID}".encode())        
+                sock.sendall(f"RECONNECT {nodeID}".encode())
 
         if wait != None:                 # wait function used in autograder
             time = wait[-1]
@@ -381,12 +381,13 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                     if (bal > ballotNum) or ((bal == ballotNum) and (node_ID > int(promisePID))):
                         ballotNum = bal
                         promisePID = node_ID
-                        print(f"Received PREPARE from node {node_ID}...")
+                        print(f"Received PREPARE from node {node_ID} with ballot NUM: <{bal}>")
                         logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
+                        print(f"Sending PROMISE to node {node_ID} with ballot NUM: <{bal}> accept NUM: <{acceptNum}> and log operation: <{logOperation}>")
                         outBoundSockets[int(node_ID)].sendall(f"PROMISE {nodeID} {str(blockchain.returnBlockLength())} {bal} {acceptNum} {logOperation}".encode())
             
             if command == "PROMISE":
-                print(f"Received PROMISE from node {node_ID}...")
+                print(f"Received PROMISE from node {node_ID} with ballot NUM: <{bal}>")
                 promiseCount += 1
                 if promiseCount >= math.ceil((len(outBoundSockets) + 1)/2):
                     if operation != None:
@@ -399,10 +400,11 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                         
                         for node in outBoundSockets.values():
                             formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
+                            print("Sending ACCEPT to node " + str(nodeID) + " with ballot NUM: <" + str(bal) + "> accept NUM: <" + str(bal) + "> and log operation: <" + formatString + ">")
                             node.sendall(f"ACCEPT {nodeID} {str(blockchain.returnBlockLength())} {bal} {acptNum} {formatString}".encode())
 
             if command == "ACCEPT" and int(blockchainLength) >= blockchain.returnBlockLength():
-                print(f"Received ACCEPT from node {node_ID}...")
+                print(f"Received ACCEPT from node {node_ID} with ballot NUM: <{bal}> and accept NUM: <{acptNum}>")
 
                 if ((bal > ballotNum) or ((bal == ballotNum) and (int(node_ID) >= int(promisePID)))):
                     acceptNum = bal
@@ -410,6 +412,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                     leadID = int(node_ID)
                     logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
 
+                    print("Sending ACCEPTED to node " + str(nodeID) + " with ballot NUM: <" + str(bal) + "> and log operation: <" + logOperation + ">")
                     outBoundSockets[int(node_ID)].sendall(f"ACCEPTED {nodeID} {str(blockchain.returnBlockLength())} {bal} {logOperation}".encode())
 
                     with open(nodeBlockChainLogFileName, "a") as log:
@@ -417,7 +420,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
 
             if command == "ACCEPTED":
                 sleep(0.5)
-                print(f"Received ACCEPTED from node {node_ID}...")
+                print(f"Received ACCEPTED from node {node_ID} with ballot NUM: <{bal}>")
                 acceptCount = acceptCount + 1
 
                 if acceptCount >= math.ceil((len(outBoundSockets) + 1)/2):
@@ -446,7 +449,7 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                         node.sendall(f"DECIDE {nodeID} {str(blockchain.returnBlockLength())} {str(1)} {formatString}".encode())
 
             if command == "DECIDE":                                                                     #if the command is decide
-                print(f"Received DECIDE from node {node_ID}...")                                        #print the received decide
+                print(f"Received DECIDE from node {node_ID} with ballotNum <{bal}>")                                        #print the received decide
                 
                 blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)  #create a new block
                 blockchain.appendBlock(blockToAdd)                                                      #append the block to the blockchain
