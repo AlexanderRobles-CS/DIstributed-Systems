@@ -69,19 +69,20 @@ def extract_fields(input_string):
 
 def get_userInput():
     global leadID
+    global ballotNum
     nodeBlockChainLogFileName = f"Node_{nodeID}_Blockchain_Log.txt"
     blogFile = f"Node_{nodeID}_Blog.txt"
         
     while True:
-        userInput = input()                     # wait for user input
+        userInput = input()    # wait for user input
 
-        view = extract_command_and_string(userInput, "view")
-        read = extract_command_and_string(userInput, "read")
-        wait = extract_command_and_string(userInput, "wait")
-        post = extract_fields_from_command(userInput, "post")
-        fixLink = check_command_letter_number(userInput, "fixLink")
-        comment = extract_fields_from_command(userInput, "comment")
-        failLink = check_command_letter_number(userInput, "failLink")
+        view = extract_command_and_string(userInput, "view")            # extract view command
+        read = extract_command_and_string(userInput, "read")            # extract read command
+        wait = extract_command_and_string(userInput, "wait")            # extract wait command
+        post = extract_fields_from_command(userInput, "post")           # extract post command
+        fixLink = check_command_letter_number(userInput, "fixLink")     # extract fixLink command
+        comment = extract_fields_from_command(userInput, "comment")     # extract comment command
+        failLink = check_command_letter_number(userInput, "failLink")   # extract failLink command
 
         if  userInput == "crash":                       # crash the program
             inBoundSocket.close()                       # close all sockets before exiting
@@ -89,19 +90,19 @@ def get_userInput():
             stdout.flush()                              # flush console output buffer in case there are remaining prints
             _exit(0)                                    # exit program with status 0
 
-        if failLink != None:                                                                                                        # fail a link between desired nodes format: failLink(Nx)
+        if failLink != None:                                                                                             # fail a link between desired nodes format: failLink(Nx)
             nodeToFail = failLink[-1]
-            print("Failing connection from node: " + str(nodeID) + " to node: " + str(nodeToFail) + "...", flush=True)              # print message to console
-            outBoundSockets[int(nodeToFail)].sendall(f"FAIL {nodeID}".encode())                                                     # send fail message to other node
-            del outBoundSockets[int(nodeToFail)]                                                                                    # delete socket from outBoundSockets
-            print("Connection from node: " + str(nodeID) + " to node: " + str(nodeToFail) + " failed\n", flush=True)                # print message to console
+            print("Failing connection from node: " + str(nodeID) + " to node: " + str(nodeToFail) + "...", flush=True)   # print message to console
+            outBoundSockets[int(nodeToFail)].sendall(f"FAIL {nodeID}".encode())                                          # send fail message to other node
+            del outBoundSockets[int(nodeToFail)]                                                                         # delete socket from outBoundSockets
+            print("Connection from node: " + str(nodeID) + " to node: " + str(nodeToFail) + " failed\n", flush=True)     # print message to console
 
-        if fixLink != None:                                                                                                         # fix a link between desired nodes format: finxLink(Nx)
+        if fixLink != None:                                                                                              # fix a link between desired nodes format: finxLink(Nx)
             nodeToFix = fixLink[-1]
-            print("Fixing connection from node: " + str(nodeID) + " to node: " + str(nodeToFix) + "...", flush=True)                # print message to console
-            addConns(int(nodeToFix))                                                                                                # add socket back to outBoundSockets
-            outBoundSockets[int(nodeToFix)].sendall(f"FIX {nodeID}".encode())                                                       # send fix message to other node
-            print("Connection from node: " + str(nodeID) + " to node: " + str(nodeToFix) + " fixed\n", flush=True)                  # print message to console
+            print("Fixing connection from node: " + str(nodeID) + " to node: " + str(nodeToFix) + "...", flush=True)     # print message to console
+            addConns(int(nodeToFix))                                                                                     # add socket back to outBoundSockets
+            outBoundSockets[int(nodeToFix)].sendall(f"FIX {nodeID}".encode())                                            # send fix message to other node
+            print("Connection from node: " + str(nodeID) + " to node: " + str(nodeToFix) + " fixed\n", flush=True)       # print message to console
 
         if userInput == "blockchain":                            # iterate through blockchain to append to history array
             if(blockchain.returnBlockLength() == 1):             # if blockchain is empty
@@ -121,11 +122,11 @@ def get_userInput():
                 print(queue, flush=True)                      # print queue to console
                 print("\n", flush=True)
 
-        if post != None:                                                   # post a new post format: post(username, title, content)
-            command = post[0]
-            username = post[1]
-            title = post[2]
-            content = post[3]
+        if post != None:              # post a new post format: post(username, title, content)
+            command = post[0]         # get command
+            username = post[1]        # get username
+            title = post[2]           # get title
+            content = post[3]         # get content
 
             if leadID != nodeID and leadID != None:
                 formatString = command + "(" + username + ", " + title + ", " + content + ")"                                                                                                                   # print message to console
@@ -145,58 +146,62 @@ def get_userInput():
                 print("Sending Accept Message...", flush=True) 
                 for node in outBoundSockets.values():                                                                                                           
                     formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
-                    node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {formatString}".encode())      # send accept message to other nodes
+                    node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {str(ballotNum)} {formatString}".encode())      # send accept message to other nodes
 
             elif leadID == None:                                    # pseudo proposer
                 print("Inserting post into queue...", flush=True) # print message to console
-                print("Sending Prepare Message...", flush=True)                                            # print message to console
+                print("Sending Prepare Message...", flush=True)                                                # print message to console
+                ballotNum = ballotNum + 1
+                print("Ballot Number: " + str(ballotNum), flush=True)                                          # print message to console
                 for node in outBoundSockets.values():                                                          # iterate through outbound sockets
-                    node.sendall(f"PREPARE {nodeID} {blockchain.returnBlockLength()} {userInput}".encode())    # send prepare message to other nodes
+                    # FIX BALLOT NUM HERE IN PLACE OF STR(1)
+                    formatString = str(command) + "(" + str(username) + ", " + str(title) + ", " + str(content) + ")"
+                    node.sendall(f"PREPARE {nodeID} {str(ballotNum)} {blockchain.returnBlockLength()} {formatString}".encode())    # send prepare message to other nodes
 
-        if comment != None:                                                   # post a new comment format: comment(username, title, content)
-            command = comment[0]
-            username = comment[1]
-            title = comment[2]
-            content = comment[3]
+        # if comment != None:                                                   # post a new comment format: comment(username, title, content)
+        #     command = comment[0]
+        #     username = comment[1]
+        #     title = comment[2]
+        #     content = comment[3]
 
-            if leadID != nodeID and leadID != None:
-                formatString = command + "(" + username + ", " + title + ", " + content + ")"                                                                                                                   # print message to console
-                outBoundSockets[int(leadID)].sendall(bytes(f"FORWARD {nodeID} {str(blockchain.returnBlockLength())} {formatString}","utf-8"))                 # forward message
+        #     if leadID != nodeID and leadID != None:
+        #         formatString = command + "(" + username + ", " + title + ", " + content + ")"                                                                                                                   # print message to console
+        #         outBoundSockets[int(leadID)].sendall(bytes(f"FORWARD {nodeID} {str(blockchain.returnBlockLength())} {formatString}","utf-8"))                 # forward message
 
-            if command == "comment" and blockchain.isValidPost(title) == False:
-                print("CANNOT COMMENT", flush=True)
+        #     if command == "comment" and blockchain.isValidPost(title) == False:
+        #         print("CANNOT COMMENT", flush=True)
            
-            elif leadID == nodeID:                                # pseudo leader
-                print("Inserting post into queue...", flush=True) # print message to console
+        #     elif leadID == nodeID:                                # pseudo leader
+        #         print("Inserting post into queue...", flush=True) # print message to console
 
-                queue.append(userInput)
+        #         queue.append(userInput)
 
-                blockToAdd = Block(blockchain.getLatestBlock().hash, command, username, title, content)
-                blockchain.appendBlock(blockToAdd)
+        #         blockToAdd = Block(blockchain.getLatestBlock().hash, command, username, title, content)
+        #         blockchain.appendBlock(blockToAdd)
                 
-                print("Sending Accept Message...", flush=True)                                                                                                                    # print message to console
-                for node in outBoundSockets.values():
-                    formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
-                    node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {formatString}".encode())      # send accept message to other nodes
+        #         print("Sending Accept Message...", flush=True)                                                                                                                    # print message to console
+        #         for node in outBoundSockets.values():
+        #             formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
+        #             node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {formatString}".encode())      # send accept message to other nodes
 
-            elif leadID == None:                                    # pseudo proposer
-                print("Inserting post into queue...", flush=True) # print message to console
-                print("Sending Prepare Message...", flush=True)                                            # print message to console
-                for node in outBoundSockets.values():                                                          # iterate through outbound sockets
-                    node.sendall(f"PREPARE {nodeID} {blockchain.returnBlockLength()} {userInput}".encode())    # send prepare message to other nodes
+        #     elif leadID == None:                                    # pseudo proposer
+        #         print("Inserting post into queue...", flush=True) # print message to console
+        #         print("Sending Prepare Message...", flush=True)                                            # print message to console
+        #         for node in outBoundSockets.values():                                                          # iterate through outbound sockets
+        #             node.sendall(f"PREPARE {nodeID} {blockchain.returnBlockLength()} {userInput}".encode())    # send prepare message to other nodes
 
-        if userInput == "blog":
-            if blockchain.returnBlockLength() == 1:
-                print("BLOG EMPTY", flush=True)
+        if userInput == "blog":                         # if user input is blog
+            if blockchain.returnBlockLength() == 1:     # if blockchain is empty
+                print("BLOG EMPTY", flush=True)         # print 'empty' message to console
             
-            else:
-                print("Printing blog...", flush=True)
-                count = 0                                         # init count for skipping genesis block
-                titleOfPosts = []                                 # init list of titles which contain the post Titles
+            else:                                       # if blockchain is not empty
+                print("Printing blog...", flush=True)   # print 'printing' to console
+                count = 0                               # init count for skipping genesis block
+                titleOfPosts = []                       # init list of titles which contain the post Titles
                 
-                for block in blockchain.chain:                    # iterate through blockchain
-                    if count == 0:                                # skip genesis block
-                        count = count + 1
+                for block in blockchain.chain:          # iterate through blockchain
+                    if count == 0:                      # skip genesis block
+                        count = count + 1           
                         continue
 
                     if block.operation == "post" or block.operation == "comment":                 # if block operation is post or a comment
@@ -247,8 +252,8 @@ def get_userInput():
                 splicedRow = row.split(" ")                                # split row by spaces
                 operation, username, title, contents = extract_fields(row)
 
-                blockToAdd = Block(blockchain.getLatestBlock().hash, str(splicedRow[1]),  str(splicedRow[2]), title, contents)  # create block                                                                                     # calculate block nonce
-                blockchain.appendBlock(blockToAdd)                                                              # add block\
+                blockToAdd = Block(blockchain.getLatestBlock().hash, str(splicedRow[1]),  str(splicedRow[2]), title, contents)  # create block
+                blockchain.appendBlock(blockToAdd)                                                              # add block
                 blockchainHistory = blockchain.getBlogChain()
 
             content = open(blogFile, 'r').readlines()
@@ -270,80 +275,149 @@ def get_userInput():
 
         if wait != None:                 # wait function used in autograder
             time = wait[-1]
-            print("waiting " + str(time) + " seconds")
-            sleep(int(time))
+            print("waiting " + str(time) + " seconds")  # print waiting time to console
+            sleep(int(time))                            # sleep for specified time from wait command
 
-        if userInput == "leader":
-            print(str(leadID) + "   " + str(type(leadID)))
+        if userInput == "leader":                           # if user input is leader
+            print(str(leadID) + "   " + str(type(leadID)))  # print leader ID
 
-        if userInput == "nodes":
-            print(outBoundSockets.keys())
+        if userInput == "nodes":                            # if user input is nodes
+            print(outBoundSockets.keys())                   # print all node IDs
 
 def handle_msg(data, conn, addr):                      # simulates network delay then handles received message
-    global leadID
-    global acceptCount
-    global promiseCount
+    global leadID                       # global leader ID
+    global acceptCount                  # global accept count
+    global promiseCount                 # global promise count
+    global ballotNum                    # global ballot number
+    global acceptNum                    # global accept number
 
     lock.acquire()                                     # acquire lock
 
-    nodeBlockChainLogFileName = f"Node_{nodeID}_Blockchain_Log.txt"
-    blogFile = f"Node_{nodeID}_Blog.txt"
+    nodeBlockChainLogFileName = f"Node_{nodeID}_Blockchain_Log.txt" # init blockchain log file name
+    blogFile = f"Node_{nodeID}_Blog.txt"                            # init blog file name
 
-    sleep(3)
+    sleep(3)                                       # simulate network delay
 
     data = data.decode()                        # decode byte data into a string
-    pattern = r"^(\S+)\s+(\d+)\s+(\d+)\s+(\S+)\(([^(),]+),\s*([^(),]+(?:\s+[^(),]+)*),\s*([^()]+(?:\s+[^(),]+)*)\)$"    # regex pattern for matching messages
-    match = re.match(pattern, str(data))
-    if match:
-        command = match.group(1)
-        node_ID = match.group(2)
-        blockchainLength = match.group(3)
-        operation = match.group(4)
-        user = match.group(5)
-        title = match.group(6)
-        contents = match.group(7)
+    splitData = data.split(" ")                 # split data by spaces
+    print("DATA: " + str(data), flush=True)     #print the data received
 
-    try:
-
+    if splitData[0] == "PREPARE":
+        pattern = r'(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\w+)\((\w+)(?:\s*,\s*(.*?))?(?:\s*,\s*(.*?))?\)'
+        match = re.match(pattern, str(data))
         if match:
             command = match.group(1)
-            node_ID = match.group(2)
-            blockchainLength = match.group(3)
+            node_ID = int(match.group(2))
+            blockchainLength = int(match.group(3))
+            bal = int(match.group(4))
+            operation = match.group(5)
+            user = match.group(6)
+            title = match.group(7)
+            contents = match.group(8)
+    
+    if splitData[0] == "PROMISE":
+        pattern = r'(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\w+)\((\w+)(?:\s*,\s*(.*?))?(?:\s*,\s*(.*?))?\)'
+        match = re.match(pattern, str(data))
+        if match:
+            command = match.group(1)
+            node_ID = int(match.group(2))
+            blockchainLength = int(match.group(3))
+            bal = int(match.group(4))
+            acceptNum = int(match.group(5)) 
+            operation = match.group(6)
+            user = match.group(7)
+            title = match.group(8)
+            contents = match.group(9)
+            
+    if splitData[0] == "ACCEPT":
+        pattern = r'(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\w+)\((\w+)(?:\s*,\s*(.*?))?(?:\s*,\s*(.*?))?\)'
+        match = re.match(pattern, str(data))
+        if match:
+            command = match.group(1)
+            node_ID = int(match.group(2))
+            blockchainLength = int(match.group(3))
+            bal = int(match.group(4))
+            acceptNum = int(match.group(5)) 
+            operation = match.group(6)
+            user = match.group(7)
+            title = match.group(8)
+            contents = match.group(9)
+    
+    if splitData[0] == "ACCEPTED":
+        pattern = r'(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\w+)\((\w+),\s*([\w\s]+),\s*([\w\s]+)\)'
+        match = re.match(pattern, str(data))
+        if match:
+            command = match.group(1)
+            node_ID = int(match.group(2))
+            blockchainLength = int(match.group(3))
+            bal = int(match.group(4))
+            operation = match.group(5)
+            user = match.group(6)
+            title = match.group(7)
+            contents = match.group(8)
+
+    if splitData[0] == "DECIDE":
+        pattern = r'(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\w+)\((\w+),\s*([\w\s]+),\s*([\w\s]+)\)'
+        match = re.match(pattern, str(data))
+        if match:
+            command = match.group(1)
+            node_ID = int(match.group(2))
+            blockchainLength = int(match.group(3))
+            bal = int(match.group(4))
+            operation = match.group(5)
+            user = match.group(6)
+            title = match.group(7)
+            contents = match.group(8)
+
+    if splitData[0] == "FORWARD":
+        pattern = r'(\w+)\s+(\d+)\s+(\d+)\s+(\w+)\((\w+),\s*([\w\s]+),\s*([\w\s]+)\)'
+        match = re.match(pattern, str(data))
+        if match:
+            command = match.group(1)
+            node_ID = int(match.group(2))
+            blockchainLength = int(match.group(3))
             operation = match.group(4)
             user = match.group(5)
             title = match.group(6)
             contents = match.group(7)
 
+    try:
+
             if command == "PREPARE" and int(blockchainLength) >= blockchain.returnBlockLength():
-                    
-                    print(f"Received PREPARE from node {node_ID}...")
-                    logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
-                    outBoundSockets[int(node_ID)].sendall(f"PROMISE {nodeID} {str(blockchain.returnBlockLength())} {logOperation}".encode())
+                    if (bal > ballotNum) or (bal == ballotNum and node_ID > int(nodeID)):
+                        ballotNum = bal
+                        print(f"Received PREPARE from node {node_ID}...")
+                        logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
+                        outBoundSockets[int(node_ID)].sendall(f"PROMISE {nodeID} {str(blockchain.returnBlockLength())} {bal} {acceptNum} {logOperation}".encode())
             
             if command == "PROMISE":
                 print(f"Received PROMISE from node {node_ID}...")
                 promiseCount += 1
                 if promiseCount >= math.ceil((len(outBoundSockets) + 1)/2):
-                    promiseCount = 0
-                    leadID = nodeID
+                    if operation != None:
 
-                    logOperation = blockchainLength+"(" + operation +", " + user + ", " + title + ")"
-                    queue.append(logOperation)
+                        promiseCount = 0
+                        leadID = nodeID
 
-                    blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
-                    blockToAdd.calcNonce()
+                        logOperation = str(blockchainLength) + " (" + operation +", " + user + ", " + title + ")"
+                        queue.append(logOperation)
 
-                    for node in outBoundSockets.values():
-                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
-                        node.sendall(f"ACCEPT {nodeID} {str(blockchain.returnBlockLength())} {formatString}".encode())
+                        blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
+                        blockToAdd.calcNonce()
+                        
+                        for node in outBoundSockets.values():
+                            formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
+                            node.sendall(f"ACCEPT {nodeID} {str(blockchain.returnBlockLength())} {bal} {acceptNum} {formatString}".encode())
 
             if command == "ACCEPT" and int(blockchainLength) >= blockchain.returnBlockLength():
                 print(f"Received ACCEPT from node {node_ID}...")
-                
+                if (bal > ballotNum) or (bal == ballotNum and node_ID > int(nodeID)):
+                    acceptNum = bal
+    
                 leadID = int(node_ID)
                 logOperation = operation+"(" + user +", " + title + ", " + contents + ")"
 
-                outBoundSockets[int(node_ID)].sendall(f"ACCEPTED {nodeID} {str(blockchain.returnBlockLength())} {logOperation}".encode())
+                outBoundSockets[int(node_ID)].sendall(f"ACCEPTED {nodeID} {str(blockchain.returnBlockLength())} {bal} {logOperation}".encode())
 
                 with open(nodeBlockChainLogFileName, "a") as log:
                         log.write(f"TENTATIVE {logOperation}\n")
@@ -368,21 +442,22 @@ def handle_msg(data, conn, addr):                      # simulates network delay
 
                     queue.pop(0)
 
-                    if operation == "post":
-                        print(f"NEWPOST: <{title}> from <{user}>")
+                    if operation == "post":                             #if the operation is post
+                        print(f"NEWPOST: <{title}> from <{user}>")      #print the new post
         
-                    if operation == "comment":
-                        print(f"NEW COMMENT: <{title}> from <{user}>")
+                    if operation == "comment":                          #if the operation is comment
+                        print(f"NEW COMMENT: <{title}> from <{user}>")  #print the new comment
 
-                    for node in outBoundSockets.values():
-                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
-                        node.sendall(f"DECIDE {nodeID} {str(blockchain.returnBlockLength())} {formatString}".encode())
+                    for node in outBoundSockets.values():               #for each node in the outbound sockets
+                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"    
+                        # FIX bal num
+                        node.sendall(f"DECIDE {nodeID} {str(blockchain.returnBlockLength())} {str(1)} {formatString}".encode())
 
-            if command == "DECIDE":
-                print(f"Received DECIDE from node {node_ID}...")
-                blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
-                blockchain.appendBlock(blockToAdd)
-                content = open(nodeBlockChainLogFileName, 'r').readlines()
+            if command == "DECIDE":                                                                     #if the command is decide
+                print(f"Received DECIDE from node {node_ID}...")                                        #print the received decide
+                blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)  #create a new block
+                blockchain.appendBlock(blockToAdd)                                                      #append the block to the blockchain
+                content = open(nodeBlockChainLogFileName, 'r').readlines()                              #read the contents of the log file
                 content[-1] = f"CONFIRMED: {blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n"
                 out = open(nodeBlockChainLogFileName, 'w')
                 out.writelines(content)
@@ -391,93 +466,93 @@ def handle_msg(data, conn, addr):                      # simulates network delay
                 with open(blogFile, "a") as log:
                         log.write(f"{blockToAdd.operation} {blockToAdd.user} title: {blockToAdd.title} contents: {blockToAdd.contents}\n")
 
-                if operation == "post":
-                    print(f"NEW POST: {title} from {user}.")
+                if operation == "post":                                 # if the operation is post
+                    print(f"NEW POST: {title} from {user}.")            # print the new post
 
-                if operation == "comment":
-                    print(f"NEW COMMENT: on {title} from {user}.")
+                if operation == "comment":                              # if the operation is comment
+                    print(f"NEW COMMENT: on {title} from {user}.")      # print the new comment
 
-            if command == "FORWARD":
-                print(f"Received FORWARD from node: {node_ID}...")
-                if leadID == nodeID:
-                    logOperation = operation + " " + user + " " + title + " " + contents
-                    queue.append(logOperation)
-                    blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)
-                    blockToAdd.calcNonce()
-                    for node in outBoundSockets.values():
-                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"
-                        node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {formatString}".encode())
+            if command == "FORWARD":                                    # if FORWARD command received
+                print(f"Received FORWARD from node: {node_ID}...")      # print that the forward was received
+                if leadID == nodeID:                                    # if the leadID is the same as the nodeID
+                    logOperation = operation + " " + user + " " + title + " " + contents                    # create the log operation
+                    queue.append(logOperation)                                                              # append the log operation to the queue
+                    blockToAdd = Block(blockchain.getLatestBlock().hash, operation, user, title, contents)  # create the block to add
+                    blockToAdd.calcNonce()                                                                  # calculate the nonce for the block
+                    for node in outBoundSockets.values():                                                   # for each node in the outbound sockets
+                        formatString = str(blockToAdd.operation) + "(" + str(blockToAdd.user) + ", " + str(blockToAdd.title) + ", " + str(blockToAdd.contents) + ")"    # create the format string
+                        node.sendall(f"ACCEPT {nodeID} {blockchain.returnBlockLength()} {str(0)} {str(0)} {formatString}".encode())                                                       # send the accept to the node
                 else:
-                    outBoundSockets[leadID].sendall(f"FORWARD {nodeID} {str(blockchain.returnBlockLength())} {logOperation}".encode())
+                    outBoundSockets[leadID].sendall(f"FORWARD {nodeID} {str(blockchain.returnBlockLength())} {logOperation}".encode())                                  # send the forward to the leadID
 
-            if command == "RECONNECT":
-                print(f"Now Reconnecting to node: {node_ID}")
-                addConns(int(node_ID))
+            if command == "RECONNECT":                          # if RECONNECT command received, add connection to dictionary
+                print(f"Now Reconnecting to node: {node_ID}")   # print reconnecting message
+                addConns(int(node_ID))                          # add connection to dictionary
 
-            if command == "FIX":
-                addConns(int(node_ID))
-                print(f"Connection to node: {node_ID} has now been fixed.", flush=True)
+            if command == "FIX":                                                            # if FIX command received, add connection to dictionary
+                addConns(int(node_ID))                                                      # add connection to dictionary
+                print(f"Connection to node: {node_ID} has now been fixed.", flush=True)     # print confirmation of fix message
 
-            if command == "FAIL":
-                del outBoundSockets[int(node_ID)]
-                print(f"Connection to node: {node_ID} has failed.", flush=True)
+            if command == "FAIL":                                                   # if FAIL command received, delete connection from dictionary
+                del outBoundSockets[int(node_ID)]                                   # delete connection from dictionary
+                print(f"Connection to node: {node_ID} has failed.", flush=True)     # print failure message
 
-    except Exception:
-        traceback.print_exc()
+    except Exception:            # if exception raised, print exception and traceback
+        traceback.print_exc()    # print traceback
     
-    lock.release()
+    lock.release()               # release lock
 
-def respond(conn, addr):                            # handle a new connection by waiting to receive from connection 
+def respond(conn, addr):              # handle a new connection by waiting to receive from connection 
 
-    while True:                                     # infinite loop to keep waiting to receive new data from this client
+    while True:                       # infinite loop to keep waiting to receive new data from this client
         try:
             data = conn.recv(1024)
         except:
-            conn.close()
-            delConns()
-            print(f"Exception raised in receiving from {addr[1]}.", flush=True)
+            conn.close()                                                        # if exception raised in receiving, close connection and
+            delConns()                                                          # delete connection from dictionary
+            print(f"Exception raised in receiving from {addr[1]}.", flush=True) # if exception raised in receiving, close connection and
             break
-        if not data:                                                                 # if client's socket closed, it will signal closing without any data
-            conn.close()                                                             # close own socket to client since other end is closed
-            print(f"Connection has been closed from {addr[1]}.", flush=True)
+        if not data:                                                            # if client's socket closed, it will signal closing without any data
+            conn.close()                                                        # close own socket to client since other end is closed
+            print(f"Connection has been closed from {addr[1]}.", flush=True)    # print that connection has been closed
             break
 
-        threading.Thread(target=handle_msg, args=(data,conn, addr)).start()           # new thread to handle message so simulated network delay and message handling don't block receive
+        threading.Thread(target=handle_msg, args=(data,conn, addr)).start()     # new thread to handle message so simulated network delay and message handling don't block receive
 
-def getConns():
-    count = 0
+def getConns():                # function to get connections to all nodes
+    count = 0                  # count of connections
     while True:
         try:
-            conn, addr = inBoundSocket.accept()
+            conn, addr = inBoundSocket.accept()                 # accept a new connection
         except:
-            print("Exception in accept.", flush= True)
+            print("Exception in accept.", flush= True)          # if exception in accept, break out of loop
             break
-        print("Connected to the inbound client", flush=True)
-        count = count + 1
+        print("Connected to the inbound client", flush=True)    # print that a new connection has been made
+        count = count + 1                                       # increment count of connections
 
         if count == 2: #CHANGE TO 4 b4 demo
-            print("All nodes have been connected...\n", flush=True)
-        threading.Thread(target=respond, args=(conn,addr)).start()
+            print("All nodes have been connected...\n", flush=True)  # print that all nodes have been connected
+        threading.Thread(target=respond, args=(conn,addr)).start()   # new thread to handle connection so that multiple connections can be handled at once
 
-def delConns():
-    failedConns = []
-    for id, node in outBoundSockets.items():
+def delConns():                                 # function to delete a connection to a node
+    failedConns = []                            # list of failed connections
+    for id, node in outBoundSockets.items():    # iterate through all connections
         try:
-            node.sendall("ping".encode())
+            node.sendall("ping".encode())       # send ping to check if connection is still alive
         except:
-            failedConns.append(id)
-    for id in failedConns:
-        del outBoundSockets[id]
+            failedConns.append(id)              # if ping fails, add connection to list of failed connections
+    for id in failedConns:                      # iterate through failed connections
+        del outBoundSockets[id]                 # delete connection from dictionary
 
-def addConns(nodeID):
-    if id not in outBoundSockets:
+def addConns(nodeID):                                                       # function to add a new connection to a node
+    if id not in outBoundSockets:                                           # if connection doesn't already exist
         try:
-            out_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            out_sock.connect((IP, 9000 + nodeID))
-            outBoundSockets[nodeID] = out_sock
-            print(f"Connected to outbound node: {nodeID}", flush=True)
+            out_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    # create new socket
+            out_sock.connect((IP, 9000 + nodeID))                           # connect to node
+            outBoundSockets[nodeID] = out_sock                              # add socket to dictionary
+            print(f"Connected to outbound node: {nodeID}", flush=True)      # print confirmation of connection
         except:
-            print(f"Failed to connect to outbound client node: {nodeID}", flush=True)
+            print(f"Failed to connect to outbound client node: {nodeID}", flush=True)   # print failure to connect
 
 if __name__ == "__main__":
     nodeID = str(sys.argv[1])                   # get node ID from command line
@@ -495,6 +570,11 @@ if __name__ == "__main__":
     leadID = None                               # leader ID
     acceptCount = 0                             # accept count
     promiseCount = 0                            # promise count
+
+    global ballotNum
+    global acceptNum
+    ballotNum = 0                               # ballot number
+    acceptNum = 0                               # accept number
 
     inBoundSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)             # create a socket object, SOCK_STREAM specifies a TCP socket
     inBoundSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)           # when REUSEADDR is not set
