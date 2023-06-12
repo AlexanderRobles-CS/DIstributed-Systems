@@ -60,7 +60,7 @@ class Blockchain:
     def getBlogChain(self):
         blog = []                                                                     # init list of posts
         for block in self.chain:                                                      # iterate through blockchain
-            blog.append((block.operation, block.user, block.title, block.contents))   # append block to list of posts
+            blog.append((block.hash ,block.nonce, block.operation, block.user, block.title, block.contents))   # append block to list of posts
         return blog
     
     def getUserPosts(self, user):
